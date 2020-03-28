@@ -2,7 +2,7 @@
 import sys
 import os
 import json
-initialization = open('./account.json', 'a')
+initialization = open('./account.json', 'a', encoding='utf8')
 def create():
     user_name = input('User Name: ')
 
@@ -12,7 +12,7 @@ def create():
         search_status = True
         while search_status:
             search_status = False
-            account_json_read = open('./account.json', 'r')
+            account_json_read = open('./account.json', 'r', encoding='utf8')
             old_data = json.loads(account_json_read.read())
             for entry in old_data:
                 if user_name == entry ['ID']:
@@ -28,24 +28,23 @@ def create():
         'PW':password
     }
     old_data.append(data)
-    account_json = open('./account.json', 'w')
+    account_json = open('./account.json', 'w', encoding='utf8')
     json.dump(old_data, account_json)
 
 def search():
     search_status = False
-    account_json_read = open('./account.json', 'r')
+    account_json_read = open('./account.json', 'r', encoding='utf8')
     user_name = input('User ID: ')
     old_data = json.loads(account_json_read.read())
     while not search_status:
         for entry in old_data:
-            if user_name == entry ['ID']:
+            if user_name == entry['ID']:
                 print('Password: '+entry['PW'])
                 search_status = True
-                break
-            else:
-                user_name = input('Please enter the other User ID or exit: ')
-                if(user_name=="exit"):
-                    sys.exit()
+                return 0
+        user_name = input('Not found user id match %s ,please enter the other User ID or exit: '%user_name)
+        if(user_name=="exit"):
+            sys.exit()
 
 if __name__ == "__main__":
     work = input('create or search or exit: ')
