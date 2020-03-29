@@ -5,7 +5,7 @@ import datetime
 import os
 import sys
 import time
-token = "LBcZJqQ4k5nofIiS7JXYrQuYp5PzyxHqLhWuOzuVVty"
+token = ""
 
 # line API document: https://notify-bot.line.me/doc/en/
 def lineNotify(token, msg):
