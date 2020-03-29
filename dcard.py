@@ -88,14 +88,15 @@ def monitor():
 
 	txt.close()
 
-def search(number=100, from_id='', school='銘傳大學', department='資訊工程學系'):
+def search(number=100, from_id='', school='銘傳大學', department=''):
 	print('Search by school: ' + school + ' department: '+ department + ' in the last ' + str(number) + ' post' + ', from:' + from_id)
 	find_status = False
 	api_status = True
 	end_id = from_id
-	txt = open('./test.txt', 'w+', encoding = 'UTF-8')
+	txt = open('./search.txt', 'w+', encoding = 'UTF-8')
 	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36'}
 	n = 0
+	count = 0
 	while n < number:
 		if end_id:
 			url = 'https://www.dcard.tw/_api/forums/whysoserious/posts?limit=100&before=%s&popular=false'%(end_id)
@@ -109,26 +110,43 @@ def search(number=100, from_id='', school='銘傳大學', department='資訊工�
 			for i in range(100):
 				end_id = str(dcard_contents[i]['id'])
 				try:
-					if(dcard_contents[i]['school']=="%s"%(school) and dcard_contents[i]['department']=="%s"%(department)):
-						find_status = True
-						txt.write('校名：')
-						txt.write(dcard_contents[i]['school'])
-						txt.write('\n')
-						txt.write('系名：')
-						txt.write(dcard_contents[i]['department'])
-						txt.write('\n')
-						txt.write('文章網址：')
-						txt.write("http://dcard.tw/f/whysoserious/p/"+str(dcard_contents[i]['id']))
-						txt.write('\n')
-						txt.write('標題：')
-						txt.write(dcard_contents[i]['title'])
-						txt.write('\n')
-						txt.write('內文：')
-						txt.write(dcard_contents[i]['excerpt'])
-						txt.write('\n')
-						txt.write('\n')
+					if department:
+						if(dcard_contents[i]['school']=="%s"%(school) and dcard_contents[i]['department']=="%s"%(department)):
+							find_status = True
+							txt.write('校名：')
+							txt.write(dcard_contents[i]['school'])
+							txt.write('\n')
+							txt.write('系名：')
+							txt.write(dcard_contents[i]['department'])
+							txt.write('\n')
+							txt.write('文章網址：')
+							txt.write("http://dcard.tw/f/whysoserious/p/"+str(dcard_contents[i]['id']))
+							txt.write('\n')
+							txt.write('標題：')
+							txt.write(dcard_contents[i]['title'])
+							txt.write('\n')
+							txt.write('內文：')
+							txt.write(dcard_contents[i]['excerpt'])
+							txt.write('\n')
+							txt.write('\n')
+							count += 1
 					else:
-						pass
+						if(dcard_contents[i]['school']=="%s"%(school)):
+							find_status = True
+							txt.write('校名：')
+							txt.write(dcard_contents[i]['school'])
+							txt.write('\n')
+							txt.write('文章網址：')
+							txt.write("http://dcard.tw/f/whysoserious/p/"+str(dcard_contents[i]['id']))
+							txt.write('\n')
+							txt.write('標題：')
+							txt.write(dcard_contents[i]['title'])
+							txt.write('\n')
+							txt.write('內文：')
+							txt.write(dcard_contents[i]['excerpt'])
+							txt.write('\n')
+							txt.write('\n')
+							count += 1
 				except:
 					pass
 
@@ -144,6 +162,7 @@ def search(number=100, from_id='', school='銘傳大學', department='資訊工�
 	if not find_status:
 		print('Not found any post at '+str(datetime.datetime.now()))
 	txt.close()
+	print("找到%d篇%s發的文章，詳細內容請看search.txt"%(count, school))
 
 if __name__ == "__main__":
 	if(len(sys.argv)==1):
@@ -151,6 +170,8 @@ if __name__ == "__main__":
 	elif(sys.argv[1]=="search"):
 		if len(sys.argv)==3:
 			search(number=int(sys.argv[2]))
+		elif len(sys.argv)==4:
+			search(number=int(sys.argv[2]), school=sys.argv[3])
 		elif len(sys.argv)==5:
 			search(number=int(sys.argv[2]), school=sys.argv[3], department=sys.argv[4])
 		elif len(sys.argv)==6:
@@ -158,4 +179,4 @@ if __name__ == "__main__":
 		else:
 			search(number=100)
 	elif(sys.argv[1]=="help"):
-		print('Usage: python dcard.py search $number $from(optional) $school $department')
+		print('Usage: python dcard.py search $number $from(optional) $school $department(optional)')
