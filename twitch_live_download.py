@@ -7,25 +7,42 @@ import m3u8
 import ffmpeg # https://pypi.org/project/ffmpeg-python/
 from datetime import datetime
 
-USHER_API = 'http://usher.twitch.tv/api/channel/hls/{channel}.m3u8?' +\
-    '&token={token}&sig={sig}&allow_audio_only=true&allow_source=true' + \
-    '&type=any&p={random}'
-TOKEN_API = 'http://api.twitch.tv/api/channels/{channel}/access_token?oauth_token={user_token}'
+LIVE_API = 'http://usher.twitch.tv/api/channel/hls/{channel}.m3u8?' +\
+    '&token={token}&sig={sig}&allow_audio_only=true&allow_source=true'
+LIVE_TOKEN_API = 'http://api.twitch.tv/api/channels/{channel}/access_token?oauth_token={user_token}'
 
-def get_token_and_signature(channel, user_token):
-    url = TOKEN_API.format(channel=channel, user_token=user_token)
+VOD_API = 'https://usher.ttvnw.net/vod/{vod_number}.m3u8?' +\
+    '&token={token}&sig={sig}&allow_audio_only=true&allow_source=true'
+VOD_TOKEN_API = 'http://api.twitch.tv/api/vods/{vod_number}/access_token?oauth_token={user_token}'
+
+def get_live_token_and_signature(channel, user_token):
+    url = LIVE_TOKEN_API.format(channel=channel, user_token=user_token)
     r = requests.get(url)
     txt = r.text
     data = json.loads(txt)
-    print(data)
     sig = data['sig']
     token = data['token']
     return token, sig
 
 def get_live_stream(channel, user_token):
-    token, sig = get_token_and_signature(channel, user_token)
-    r = random.randint(0,1E7)
-    url = USHER_API.format(channel=channel, sig=sig, token=token, random=r)
+    token, sig = get_live_token_and_signature(channel, user_token)
+    url = LIVE_API.format(channel=channel, sig=sig, token=token)
+    r = requests.get(url)
+    m3u8_obj = m3u8.loads(r.text)
+    return m3u8_obj
+
+def get_vod_token_and_signature(vod_number, user_token):
+    url = VOD_TOKEN_API.format(vod_number=vod_number, user_token=user_token)
+    r = requests.get(url)
+    txt = r.text
+    data = json.loads(txt)
+    sig = data['sig']
+    token = data['token']
+    return token, sig
+
+def get_vod_stream(vod_number, user_token):
+    token, sig = get_vod_token_and_signature(vod_number, user_token)
+    url = VOD_API.format(vod_number=vod_number, token=token, sig=sig)
     r = requests.get(url)
     m3u8_obj = m3u8.loads(r.text)
     return m3u8_obj
@@ -55,13 +72,14 @@ def get_video_urls(m3u8_obj):
             print(txt)
             print(len(txt)*"-")
             print(uri)
-            if quality == "audio_only":
+            if quality == "audio_only" or quality == "Audio Only":
                 audio_uri = uri
-            elif "source" in quality:
+            elif "source" in quality or 'chunked' in uri:
                 source_uri = uri
         return source_uri, audio_uri
     else:
         print("No live video")
+        return 0, 0
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser('get video url of twitch channel')
@@ -69,9 +87,14 @@ if __name__=="__main__":
     parser.add_argument('user_token')
     parser.add_argument('download')
     args = parser.parse_args()
-    m3u8_obj = get_live_stream(args.channel_name, args.user_token)
+    if not args.channel_name.isdecimal():
+        m3u8_obj = get_live_stream(args.channel_name, args.user_token)
+    else:
+        m3u8_obj = get_vod_stream(args.channel_name, args.user_token)
     source_uri, audio_uri = get_video_urls(m3u8_obj)
     if args.download == 'mp3':
         download_mp3(audio_uri, args.channel_name)
     elif args.download == 'mp4':
         download_mp4(source_uri, args.channel_name)
+    elif args.download != 'false':
+        print('download argument only support "mp3" or "mp4"')
