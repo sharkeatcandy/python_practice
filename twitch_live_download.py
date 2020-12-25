@@ -1,10 +1,9 @@
-import requests
-import json
-import re
 import argparse
-import random
-import m3u8
 import ffmpeg # https://pypi.org/project/ffmpeg-python/
+import json
+import m3u8
+import requests
+import time
 from datetime import datetime
 
 LIVE_API = 'http://usher.twitch.tv/api/channel/hls/{channel}.m3u8?' +\
@@ -49,15 +48,23 @@ def get_vod_stream(vod_number, user_token):
 
 def download_mp3(uri, channel_name):
     current_date = datetime.today().strftime('%Y%m%d')
-    stream = ffmpeg.input(uri)
-    stream = ffmpeg.output(stream, '{}_{}.mp3'.format(channel_name, current_date))
-    ffmpeg.run(stream)
+    (
+        ffmpeg
+        .input(uri)
+        .output(f'{channel_name}_{current_date}.mp3')
+        .global_args('-loglevel', 'info')
+        .run()
+    )
 
 def download_mp4(uri, channel_name):
     current_date = datetime.today().strftime('%Y%m%d')
-    stream = ffmpeg.input(uri)
-    stream = ffmpeg.output(stream, '{}_{}.mp4'.format(channel_name, current_date))
-    ffmpeg.run(stream)
+    (
+        ffmpeg
+        .input(uri)
+        .output(f'{channel_name}_{current_date}.mp4')
+        .global_args('-loglevel', 'info')
+        .run()
+    )
 
 def get_video_urls(m3u8_obj):
     if m3u8_obj.playlists:
@@ -79,7 +86,7 @@ def get_video_urls(m3u8_obj):
         return source_uri, audio_uri
     else:
         print("No live video")
-        return 0, 0
+        exit()
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser('get video url of twitch channel')
@@ -89,6 +96,18 @@ if __name__=="__main__":
     args = parser.parse_args()
     if not args.channel_name.isdecimal():
         m3u8_obj = get_live_stream(args.channel_name, args.user_token)
+        while not m3u8_obj.playlists:
+            try:
+                current_time = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+                print(f'Wait for {args.channel_name} start to stream, current time: {current_time}')
+                time.sleep(600)
+                m3u8_obj = get_live_stream(args.channel_name, args.user_token)
+            except KeyboardInterrupt:
+                print(f"exit monitor {args.channel_name}'s streaming")
+                exit()
+            except ConnectionError:
+                print('Twitch API not stable, retry again')
+                pass
     else:
         m3u8_obj = get_vod_stream(args.channel_name, args.user_token)
     source_uri, audio_uri = get_video_urls(m3u8_obj)
@@ -98,3 +117,4 @@ if __name__=="__main__":
         download_mp4(source_uri, args.channel_name)
     elif args.download != 'false':
         print('download argument only support "mp3" or "mp4"')
+    
