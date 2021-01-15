@@ -6,8 +6,7 @@ import requests
 import time
 from datetime import datetime
 
-TOKEN_QUERY = '{"operationName":"PlaybackAccessToken_Template","query":"query PlaybackAccessToken_Template($login: String\u0021, $isLive: Boolean\u0021, $vodID: ID\u0021, $isVod: Boolean\u0021, $playerType: String\u0021) {  streamPlaybackAccessToken(channelName: $login, params: {platform: \\"web\\", playerBackend: \\"mediaplayer\\", playerType: $playerType}) @include(if: $isLive) {    value    signature    __typename  }  videoPlaybackAccessToken(id: $vodID, params: {platform: \\"web\\", playerBackend: \\"mediaplayer\\", playerType: $playerType}) @include(if: $isVod) {    value    signature    __typename  }}","variables":{'
-TOKEN_QUERY_VARIABLE = '"isLive":{is_live},"login":"{channel}","isVod":{is_vod},"vodID":"{vod_number}","playerType":"site"'
+TOKEN_QUERY = '{{"operationName":"PlaybackAccessToken_Template","query":"query PlaybackAccessToken_Template($login: String\u0021, $isLive: Boolean\u0021, $vodID: ID\u0021, $isVod: Boolean\u0021, $playerType: String\u0021) {{  streamPlaybackAccessToken(channelName: $login, params: {{platform: \\"web\\", playerBackend: \\"mediaplayer\\", playerType: $playerType}}) @include(if: $isLive) {{    value    signature    __typename  }}  videoPlaybackAccessToken(id: $vodID, params: {{platform: \\"web\\", playerBackend: \\"mediaplayer\\", playerType: $playerType}}) @include(if: $isVod) {{    value    signature    __typename  }}}}","variables":{{"isLive":{is_live},"login":"{channel}","isVod":{is_vod},"vodID":"{vod_number}","playerType":"site"}}}}'
 TOKEN_API = 'https://gql.twitch.tv/gql'
 
 LIVE_API = 'http://usher.twitch.tv/api/channel/hls/{channel}.m3u8?' +\
@@ -19,8 +18,7 @@ VOD_API = 'https://usher.ttvnw.net/vod/{vod_number}.m3u8?' +\
 # VOD_TOKEN_API = 'http://api.twitch.tv/api/vods/{vod_number}/access_token?oauth_token={user_token}'
 
 def generate_token_query(channel, is_live, is_vod, vod_number=''):
-    query_token = TOKEN_QUERY_VARIABLE.format(is_live=is_live, channel=channel, is_vod=is_vod, vod_number=vod_number)
-    return TOKEN_QUERY+query_token+'}}'
+    return TOKEN_QUERY.format(is_live=is_live, channel=channel, is_vod=is_vod, vod_number=vod_number)
 
 def get_live_token_and_signature(channel, user_token):
     headers = {'Authorization': f'OAuth {user_token}'}
