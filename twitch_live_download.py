@@ -1,5 +1,5 @@
 import argparse
-import ffmpeg # https://pypi.org/project/ffmpeg-python/
+import ffmpeg  # https://pypi.org/project/ffmpeg-python/
 import json
 import m3u8
 import requests
@@ -17,8 +17,10 @@ VOD_API = 'https://usher.ttvnw.net/vod/{vod_number}.m3u8?' +\
     '&token={token}&sig={sig}&allow_audio_only=true&allow_source=true'
 # VOD_TOKEN_API = 'http://api.twitch.tv/api/vods/{vod_number}/access_token?oauth_token={user_token}'
 
+
 def generate_token_query(channel, is_live, is_vod, vod_number=''):
     return TOKEN_QUERY.format(is_live=is_live, channel=channel, is_vod=is_vod, vod_number=vod_number)
+
 
 def get_live_token_and_signature(channel, user_token):
     headers = {'Authorization': f'OAuth {user_token}'}
@@ -29,12 +31,14 @@ def get_live_token_and_signature(channel, user_token):
     token = data['value']
     return token, sig
 
+
 def get_live_stream(channel, user_token):
     token, sig = get_live_token_and_signature(channel, user_token)
     url = LIVE_API.format(channel=channel, sig=sig, token=token)
     response = requests.get(url).text
     m3u8_obj = m3u8.loads(response)
     return m3u8_obj
+
 
 def get_vod_token_and_signature(channel, vod_number, user_token):
     headers = {'Authorization': f'OAuth {user_token}'}
@@ -46,12 +50,14 @@ def get_vod_token_and_signature(channel, vod_number, user_token):
     token = data['value']
     return token, sig
 
+
 def get_vod_stream(channel, vod_number, user_token):
     token, sig = get_vod_token_and_signature(channel, vod_number, user_token)
     url = VOD_API.format(vod_number=vod_number, token=token, sig=sig)
     response = requests.get(url).text
     m3u8_obj = m3u8.loads(response)
     return m3u8_obj
+
 
 def download_mp3(uri, channel_name):
     current_date = datetime.today().strftime('%Y%m%d%H%M%S')
@@ -63,6 +69,7 @@ def download_mp3(uri, channel_name):
         .run()
     )
 
+
 def download_mp4(uri, channel_name):
     current_date = datetime.today().strftime('%Y%m%d')
     (
@@ -73,10 +80,11 @@ def download_mp4(uri, channel_name):
         .run()
     )
 
+
 def get_video_urls(m3u8_obj):
     if m3u8_obj.playlists:
         print("Video URLs (sorted by quality):")
-        for p in  m3u8_obj.playlists:
+        for p in m3u8_obj.playlists:
             si = p.stream_info
             bandwidth = si.bandwidth/(1024)
             quality = p.media[0].name
@@ -95,6 +103,7 @@ def get_video_urls(m3u8_obj):
         print("No live video")
         exit()
 
+
 def monitor_streaming(channel_name, user_token, file_type):
     while True:
         m3u8_obj = get_live_stream(channel_name, user_token)
@@ -108,9 +117,10 @@ def monitor_streaming(channel_name, user_token, file_type):
                 print(f"exit monitor {channel_name}'s streaming")
                 exit()
             except ConnectionError:
-                print('Twitch API not stable, retry again') 
+                print('Twitch API not stable, retry again')
                 pass
         download_streaming(file_type, m3u8_obj, channel_name)
+
 
 def download_streaming(file_type, m3u8_obj, channel_name):
     source_uri, audio_uri = get_video_urls(m3u8_obj)
@@ -121,7 +131,8 @@ def download_streaming(file_type, m3u8_obj, channel_name):
     elif file_type != 'false':
         print('download argument only support "mp3" or "mp4"')
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser('get video url of twitch channel')
     parser.add_argument('channel_name')
     parser.add_argument('--vod_number')
@@ -133,5 +144,3 @@ if __name__=="__main__":
     else:
         m3u8_obj = get_vod_stream(args.channel_name, args.vod_number, args.user_token)
         download_streaming(args.download, m3u8_obj, args.channel_name)
-        
-        
