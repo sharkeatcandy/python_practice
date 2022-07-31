@@ -71,12 +71,12 @@ def download_mp3(uri, channel_name):
 
 
 def download_mp4(uri, channel_name):
-    current_date = datetime.today().strftime('%Y%m%d')
+    current_date = datetime.today().strftime('%Y%m%d%H%M%S')
     (
         ffmpeg
         .input(uri)
         .output(f'{channel_name}_{current_date}.mp4')
-        .global_args('-loglevel', 'info')
+        .global_args('-loglevel', 'info', '-c:v', 'nvenc_h264')
         .run()
     )
 
