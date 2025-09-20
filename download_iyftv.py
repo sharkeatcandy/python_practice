@@ -198,6 +198,13 @@ def main():
         print(f"[INFO] 打開第 {title} 集: {episode_url}")
         driver.get(episode_url)
 
+        # 清除瀏覽器日志以避免獲取上一個影片的 m3u8 連結
+        try:
+            driver.get_log("performance")  # 清除現有的 performance 日志
+            print("[INFO] 已清除瀏覽器日志")
+        except Exception as e:
+            print(f"[WARN] 清除日志時發生錯誤: {e}")
+
         # 每集都檢查並處理挑戰頁面
         driver = handle_challenge_page(driver)
 
